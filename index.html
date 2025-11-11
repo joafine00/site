@@ -3,265 +3,539 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GoToLinkUp (Beta Demo) - Link Shortener & QR Generator</title>
+<title>GoToLinkUp PRO - Advanced Link Manager</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 
-  body {
-    margin: 0;
-    padding: 1rem;
-    font-family: 'Orbitron', monospace;
-    background-color: #0b0f1a;
-    color: #a0cfff;
+  /* Reset básico */
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Roboto Mono', monospace;
+    background: #121212;
+    color: #ddd;
     display: flex;
-    justify-content: center;
-    min-height: 100vh;
+    flex-direction: column;
   }
 
-  #container {
-    max-width: 600px;
-    width: 100%;
-  }
-
-  h1 {
+  /* Barra superior */
+  header {
+    height: 50px;
+    background: #1f1f1f;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
     color: #61dafb;
-    letter-spacing: 0.1em;
-    margin-bottom: 1rem;
-    text-align: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    user-select: none;
+  }
+
+  /* Layout principal */
+  #app {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  /* Menu lateral */
+  nav {
+    width: 220px;
+    background: #222;
+    padding: 1rem;
+    border-right: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+  }
+  nav h2 {
+    margin: 0 0 1rem 0;
+    color: #4dd0e1;
+  }
+  nav button {
+    background: none;
+    border: none;
+    color: #ccc;
+    padding: 0.7rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease;
+  }
+  nav button:hover, nav button.active {
+    background: #4dd0e1;
+    color: #121212;
+  }
+
+  /* Área principal */
+  main {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  h2 {
+    color: #4dd0e1;
+    margin-top: 0;
   }
 
   label {
-    font-weight: 700;
+    display: block;
+    margin: 0.8rem 0 0.3rem 0;
   }
 
-  input[type="text"] {
-    width: 100%;
-    padding: 0.5rem;
-    font-size: 1rem;
-    margin-top: 0.3rem;
-    border-radius: 5px;
-    border: none;
-    background: #1c2233;
-    color: #d0e7ff;
-    box-sizing: border-box;
-  }
-
-  button {
-    margin-top: 0.7rem;
+  input[type="text"], input[type="password"], textarea {
     width: 100%;
     padding: 0.6rem;
-    font-size: 1.1rem;
-    font-weight: 700;
-    border-radius: 5px;
+    border-radius: 4px;
     border: none;
-    background-color: #4caf50;
-    color: white;
+    background: #1e1e1e;
+    color: #eee;
+    font-size: 1rem;
+    font-family: 'Roboto Mono', monospace;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  input[type="checkbox"] {
+    margin-right: 0.5rem;
+  }
+
+  button.primary {
+    margin-top: 1rem;
+    background: #4dd0e1;
+    color: #121212;
+    border: none;
+    padding: 0.8rem 1.2rem;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 1.1rem;
     cursor: pointer;
     transition: background-color 0.3s ease;
   }
-  button:hover:not(:disabled) {
-    background-color: #45a049;
-  }
-  button:disabled {
-    background-color: #2f6d2f;
-    cursor: not-allowed;
+  button.primary:hover {
+    background: #33becf;
   }
 
-  #qrcode {
-    margin: 1rem auto;
-    text-align: center;
-  }
-
-  #shortLink, #waitMessage {
-    margin-top: 1rem;
-    background: #12172a;
-    padding: 0.7rem;
-    border-radius: 5px;
-    word-break: break-word;
-    text-align: center;
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
-
-  #savedLinks {
+  /* Lista de links */
+  #linksList {
     margin-top: 2rem;
+    max-height: 300px;
+    overflow-y: auto;
   }
+
   .link-item {
-    background: #12172a;
-    padding: 0.5rem;
-    border-radius: 5px;
-    margin: 0.3rem 0;
+    background: #1e1e1e;
+    padding: 0.8rem;
+    border-radius: 6px;
+    margin-bottom: 0.7rem;
+    display: flex;
+    flex-direction: column;
     font-size: 0.9rem;
   }
-  a {
-    color: #61dafb;
-    text-decoration: none;
+  .link-header {
+    font-weight: 700;
+    color: #4dd0e1;
+    margin-bottom: 0.3rem;
   }
-  a:hover {
-    text-decoration: underline;
+  .link-url, .link-short {
+    color: #bbb;
+    word-break: break-all;
+  }
+  .link-private {
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: #e57373;
+    font-weight: 700;
   }
 
-  /* Wait page style */
-  #waitPage {
+  .btn-copy {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+    background: #61dafb;
+    border: none;
+    color: #121212;
+    font-weight: 700;
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  .btn-copy:hover {
+    background: #4bb9d5;
+  }
+
+  /* QR Code container */
+  #qrcode {
+    margin-top: 1rem;
     text-align: center;
-    margin-top: 3rem;
-    font-size: 1.3rem;
+  }
+
+  /* Mensagens */
+  #message {
+    margin-top: 1rem;
     font-weight: 700;
     color: #7efc82;
   }
+  #error {
+    margin-top: 1rem;
+    color: #f44336;
+    font-weight: 700;
+  }
 
-  /* Hide sections by default */
-  section {
+  /* Access page overlay */
+  #accessOverlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(18,18,18,0.95);
+    color: #a0cfff;
     display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    z-index: 9999;
   }
 
-  /* Show active */
-  section.active {
-    display: block;
+  #accessOverlay.active {
+    display: flex;
   }
+
+  #accessOverlay h2 {
+    margin-bottom: 1rem;
+    color: #61dafb;
+  }
+
+  #accessOverlay p {
+    margin-bottom: 1rem;
+    max-width: 320px;
+    text-align: center;
+  }
+
+  #accessOverlay input[type="password"] {
+    max-width: 250px;
+    margin-bottom: 1rem;
+  }
+
+  #accessOverlay button {
+    background: #4dd0e1;
+    border: none;
+    padding: 0.7rem 1.4rem;
+    font-weight: 700;
+    color: #121212;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #accessOverlay button:hover {
+    background: #33becf;
+  }
+
+  /* Wait spinner */
+  #waitSpinner {
+    border: 6px solid #2a2a2a;
+    border-top: 6px solid #61dafb;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1.5s linear infinite;
+    margin-bottom: 1rem;
+  }
+  @keyframes spin {
+    0% {transform: rotate(0deg);}
+    100% {transform: rotate(360deg);}
+  }
+
 </style>
 </head>
 <body>
-  <div id="container">
 
-    <h1>GoToLinkUp (Beta Demo)</h1>
+<header>
+  GoToLinkUp PRO - Advanced Link Manager (Beta)
+</header>
 
-    <!-- Generator & List -->
-    <section id="mainSection" class="active">
-      <label for="urlInput">Enter your URL to shorten and generate QR code:</label>
-      <input type="text" id="urlInput" placeholder="https://example.com" autocomplete="off" />
-      <button id="generateBtn">Generate Short Link & QR Code</button>
+<div id="app">
+  <nav>
+    <h2>Menu</h2>
+    <button id="btnCreate" class="active">Create Link</button>
+    <button id="btnLinks">My Links</button>
+  </nav>
+
+  <main>
+    <!-- Create Link Panel -->
+    <section id="panelCreate" class="panel active">
+      <h2>Create New Short Link</h2>
+
+      <label for="inputURL">Original URL:</label>
+      <input type="text" id="inputURL" placeholder="https://example.com" autocomplete="off" />
+
+      <label><input type="checkbox" id="checkboxPrivate" /> Make this link PRIVATE (requires access code)</label>
+
+      <div id="privateCodeDiv" style="display:none;">
+        <label for="inputAccessCode">Set Access Code (Password):</label>
+        <input type="password" id="inputAccessCode" placeholder="Enter access code" autocomplete="off" />
+      </div>
+
+      <button id="btnGenerate" class="primary">Generate Link & QR Code</button>
 
       <div id="qrcode"></div>
 
-      <div id="shortLink"></div>
-
-      <h3>Saved Short Links:</h3>
-      <div id="savedLinks"></div>
+      <div id="message"></div>
+      <div id="error"></div>
     </section>
 
-    <!-- Wait / Redirect Section -->
-    <section id="waitSection">
-      <div id="waitPage">
-        <p>Please wait while we verify you are not a bot...</p>
-        <p id="countdown">Redirecting in 5 seconds</p>
-      </div>
+    <!-- Links List Panel -->
+    <section id="panelLinks" class="panel">
+      <h2>My Saved Links</h2>
+      <div id="linksList"></div>
     </section>
+  </main>
+</div>
 
-  </div>
+<!-- Access Overlay -->
+<div id="accessOverlay">
+  <div id="waitSpinner"></div>
+  <h2>Verifying Access...</h2>
+  <p id="accessMessage">Please wait while we check for bots.</p>
+  <input type="password" id="accessCodeInput" placeholder="Enter access code" style="display:none;" autocomplete="off" />
+  <button id="btnAccessSubmit" style="display:none;">Submit</button>
+  <div id="accessError" style="color:#f44336; font-weight:700; margin-top:0.7rem;"></div>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script>
-  const mainSection = document.getElementById('mainSection');
-  const waitSection = document.getElementById('waitSection');
+  // Elements
+  const btnCreate = document.getElementById('btnCreate');
+  const btnLinks = document.getElementById('btnLinks');
 
-  const urlInput = document.getElementById('urlInput');
-  const generateBtn = document.getElementById('generateBtn');
+  const panelCreate = document.getElementById('panelCreate');
+  const panelLinks = document.getElementById('panelLinks');
+
+  const inputURL = document.getElementById('inputURL');
+  const checkboxPrivate = document.getElementById('checkboxPrivate');
+  const privateCodeDiv = document.getElementById('privateCodeDiv');
+  const inputAccessCode = document.getElementById('inputAccessCode');
+
+  const btnGenerate = document.getElementById('btnGenerate');
   const qrcodeContainer = document.getElementById('qrcode');
-  const shortLinkDiv = document.getElementById('shortLink');
-  const savedLinksContainer = document.getElementById('savedLinks');
-  const countdownEl = document.getElementById('countdown');
 
-  // Utils
-  function getQueryParam(param) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(param);
+  const message = document.getElementById('message');
+  const error = document.getElementById('error');
+
+  const linksList = document.getElementById('linksList');
+
+  const accessOverlay = document.getElementById('accessOverlay');
+  const waitSpinner = document.getElementById('waitSpinner');
+  const accessMessage = document.getElementById('accessMessage');
+  const accessCodeInput = document.getElementById('accessCodeInput');
+  const btnAccessSubmit = document.getElementById('btnAccessSubmit');
+  const accessError = document.getElementById('accessError');
+
+  // Link storage key
+  const STORAGE_KEY = 'gotolinkup_pro_links';
+
+  // Simple router for panels
+  btnCreate.addEventListener('click', () => {
+    btnCreate.classList.add('active');
+    btnLinks.classList.remove('active');
+    panelCreate.classList.add('active');
+    panelLinks.classList.remove('active');
+    clearMessages();
+  });
+  btnLinks.addEventListener('click', () => {
+    btnLinks.classList.add('active');
+    btnCreate.classList.remove('active');
+    panelLinks.classList.add('active');
+    panelCreate.classList.remove('active');
+    loadLinks();
+    clearMessages();
+  });
+
+  // Show/hide access code input on checkbox
+  checkboxPrivate.addEventListener('change', () => {
+    privateCodeDiv.style.display = checkboxPrivate.checked ? 'block' : 'none';
+  });
+
+  // Clear messages
+  function clearMessages() {
+    message.textContent = '';
+    error.textContent = '';
   }
 
+  // Generate short code
   function generateShortCode() {
     return Math.random().toString(36).substring(2, 8);
   }
 
-  // Save links to localStorage
-  function saveLink(shortCode, originalURL) {
-    let links = JSON.parse(localStorage.getItem('gotolinkup_links') || '{}');
-    links[shortCode] = originalURL;
-    localStorage.setItem('gotolinkup_links', JSON.stringify(links));
+  // Save link to localStorage
+  function saveLink(obj) {
+    const links = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    links[obj.code] = obj;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
   }
 
-  // Load links from localStorage and list them
+  // Load links list and render
   function loadLinks() {
-    savedLinksContainer.innerHTML = '';
-    const links = JSON.parse(localStorage.getItem('gotolinkup_links') || '{}');
+    linksList.innerHTML = '';
+    const links = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     if (Object.keys(links).length === 0) {
-      savedLinksContainer.innerHTML = '<p>No saved short links yet.</p>';
+      linksList.innerHTML = '<p>No links saved yet.</p>';
       return;
     }
-    for (const [code, url] of Object.entries(links)) {
+    for (const code in links) {
+      const link = links[code];
       const div = document.createElement('div');
       div.className = 'link-item';
-      div.innerHTML = `
-        <strong>${code}</strong>: <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a><br>
-        Short Link: <a href="?scode=${code}">${window.location.origin + window.location.pathname}?scode=${code}</a>
-      `;
-      savedLinksContainer.appendChild(div);
-    }
-  }
 
-  // Generate QR code for the original URL (not the short link)
-  function generateQRCode(text) {
-    qrcodeContainer.innerHTML = '';
-    QRCode.toCanvas(qrcodeContainer, text, { width: 200 }, function (error) {
-      if (error) console.error(error);
+      const privateTag = link.private ? '<span class="link-private">[PRIVATE]</span>' : '';
+      div.innerHTML = `
+        <div class="link-header">${code} ${privateTag}</div>
+        <div class="link-url" title="${link.url}">${link.url}</div>
+        <div class="link-short" title="Short link">
+          <a href="?scode=${code}" target="_blank">${window.location.origin + window.location.pathname}?scode=${code}</a>
+          <button class="btn-copy" data-clip="${window.location.origin + window.location.pathname}?scode=${code}">Copy</button>
+        </div>
+      `;
+      linksList.appendChild(div);
+    }
+
+    // Add copy buttons functionality
+    linksList.querySelectorAll('.btn-copy').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const text = btn.getAttribute('data-clip');
+        navigator.clipboard.writeText(text).then(() => {
+          alert('Short link copied to clipboard!');
+        });
+      });
     });
   }
 
-  // Main generator flow
-  generateBtn.addEventListener('click', () => {
-    const url = urlInput.value.trim();
-    if (!url) {
-      alert('Please enter a valid URL!');
-      return;
-    }
-    const shortCode = generateShortCode();
-    saveLink(shortCode, url);
-    generateQRCode(url);
-    shortLinkDiv.innerHTML = `
-      Short link: <a href="?scode=${shortCode}">${window.location.origin + window.location.pathname}?scode=${shortCode}</a>
-      <br><small>Note: QR code is for the original URL only.</small>
-    `;
-    loadLinks();
-    urlInput.value = '';
-  });
-
-  // Wait page + redirect logic
-  function waitAndRedirect(shortCode) {
-    mainSection.classList.remove('active');
-    waitSection.classList.add('active');
-
-    const links = JSON.parse(localStorage.getItem('gotolinkup_links') || '{}');
-    const originalURL = links[shortCode];
-
-    if (!originalURL) {
-      waitSection.innerHTML = '<p style="color:#ff6b6b; font-weight:700; text-align:center;">Invalid or expired link code.</p>';
-      return;
-    }
-
-    let secondsLeft = 5;
-    countdownEl.textContent = `Redirecting in ${secondsLeft} seconds`;
-
-    const interval = setInterval(() => {
-      secondsLeft--;
-      if (secondsLeft > 0) {
-        countdownEl.textContent = `Redirecting in ${secondsLeft} seconds`;
-      } else {
-        clearInterval(interval);
-        // Redirect to original URL
-        window.location.href = originalURL;
-      }
-    }, 1000);
+  // Generate QR code of original URL
+  function generateQRCode(text) {
+    qrcodeContainer.innerHTML = '';
+    QRCode.toCanvas(qrcodeContainer, text, { width: 180 }, err => {
+      if (err) console.error(err);
+    });
   }
 
-  // On page load
+  // Generate new link event
+  btnGenerate.addEventListener('click', () => {
+    clearMessages();
+    const url = inputURL.value.trim();
+    if (!url || !isValidURL(url)) {
+      error.textContent = 'Please enter a valid URL.';
+      return;
+    }
+
+    const isPrivate = checkboxPrivate.checked;
+    const accessCode = inputAccessCode.value.trim();
+
+    if (isPrivate && accessCode.length < 3) {
+      error.textContent = 'Access code must be at least 3 characters.';
+      return;
+    }
+
+    const shortCode = generateShortCode();
+    const newLink = {
+      code: shortCode,
+      url: url,
+      private: isPrivate,
+      accessCode: isPrivate ? accessCode : null,
+      createdAt: Date.now()
+    };
+
+    saveLink(newLink);
+    generateQRCode(url);
+
+    message.innerHTML = `Link created! Short URL: <a href="?scode=${shortCode}" target="_blank">${window.location.origin + window.location.pathname}?scode=${shortCode}</a>`;
+
+    inputURL.value = '';
+    checkboxPrivate.checked = false;
+    privateCodeDiv.style.display = 'none';
+    inputAccessCode.value = '';
+  });
+
+  // Validate URL format (simple)
+  function isValidURL(string) {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Access flow when entering with ?scode=xxx
   const scode = getQueryParam('scode');
   if (scode) {
-    // Show wait page with redirect
-    waitAndRedirect(scode);
-  } else {
-    // Show main UI
-    mainSection.classList.add('active');
-    waitSection.classList.remove('active');
-    loadLinks();
+    // Hide main UI and show overlay
+    document.getElementById('app').style.display = 'none';
+    accessOverlay.classList.add('active');
+
+    const links = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const linkObj = links[scode];
+
+    if (!linkObj) {
+      accessMessage.textContent = 'Link not found or expired.';
+      waitSpinner.style.display = 'none';
+      return;
+    }
+
+    // Start bot check (wait + spinner)
+    accessMessage.textContent = 'Please wait while we verify you are not a bot...';
+    accessCodeInput.style.display = 'none';
+    btnAccessSubmit.style.display = 'none';
+    accessError.textContent = '';
+
+    let waitSeconds = 5;
+    const interval = setInterval(() => {
+      waitSeconds--;
+      if (waitSeconds > 0) {
+        accessMessage.textContent = `Please wait while we verify you are not a bot... (${waitSeconds}s)`;
+      } else {
+        clearInterval(interval);
+        waitSpinner.style.display = 'none';
+
+        // If private, show password input
+        if (linkObj.private) {
+          accessMessage.textContent = 'This link is PRIVATE. Please enter access code:';
+          accessCodeInput.style.display = 'block';
+          btnAccessSubmit.style.display = 'inline-block';
+          accessCodeInput.focus();
+        } else {
+          // Redirect directly
+          window.location.href = linkObj.url;
+        }
+      }
+    }, 1000);
+
+    // Submit password check
+    btnAccessSubmit.addEventListener('click', () => {
+      accessError.textContent = '';
+      const val = accessCodeInput.value.trim();
+      if (val === linkObj.accessCode) {
+        window.location.href = linkObj.url;
+      } else {
+        accessError.textContent = 'Incorrect access code. Try again.';
+      }
+    });
+
+    // Allow enter key for password input
+    accessCodeInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') btnAccessSubmit.click();
+    });
+  }
+
+  // Helpers
+  function getQueryParam(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
   }
 </script>
 
