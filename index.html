@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GO - QR Code & Access</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+  body {
+    font-family: 'Orbitron', sans-serif;
+    background: #0b0f1a;
+    color: #a0cfff;
+    margin: 0;
+    padding: 1rem;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  #container {
+    max-width: 600px;
+    width: 100%;
+  }
+
+  h1, h2, h3 {
+    color: #61dafb;
+    letter-spacing: 0.1em;
+  }
+
+  /* Common styles */
+  input, button {
+    padding: 0.5rem;
+    font-size: 1rem;
+    margin: 0.3rem 0;
+    width: 100%;
+    border-radius: 5px;
+    border: none;
+    font-family: 'Orbitron', monospace;
+  }
+  input {
+    background: #1c2233;
+    color: #d0e7ff;
+    text-align: center;
+  }
+  button {
+    background: #4caf50;
+    color: white;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.3s ease;
+  }
+  button:hover:not(:disabled) {
+    background: #45a049;
+  }
+  button:disabled {
+    background: #2f6d2f;
+    cursor: not-allowed;
+  }
+
+  #qrcode {
+    margin: 1rem 0;
+    text-align: center;
+  }
+
+  .link-item {
+    background: #12172a;
+    padding: 0.5rem;
+    border-radius: 5px;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+  }
+  a {
+    color: #61dafb;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+
+  #accessSection p, #accessSection .price-info {
+    font-size: 1rem;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+  }
+
+  .price-info {
+    font-weight: 600;
+    color: #8ad0ff;
+  }
+
+  #accessLink {
+    margin-top: 2rem;
+    font-size: 1.1rem;
+    color: #7efc82;
+    word-break: break-word;
+  }
+
+  .error {
+    color: #ff6b6b;
+    margin-top: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<div id="container">
+
+  <!-- Generator Section -->
+  <section id="generatorSection" style="display:none;">
+    <h1>GO - QR Code Generator</h1>
+    <label for="urlInput">Enter URL to generate QR and short link:</label>
+    <input type="text" id="urlInput" placeholder="https://example.com" autocomplete="off" />
+    <button id="generateBtn">Generate QR & Short Link</button>
+
+    <div id="qrcode"></div>
+
+    <h3>Saved Links (short codes stored in localStorage):</h3>
+    <div id="savedLinks"></div>
+  </section>
+
+  <!-- Access Section -->
+  <section id="accessSection" style="display:none;">
+    <h1>SPACE COMMUNITY ACCESS</h1>
+    <p>Welcome! To access or download the requested content, you need <strong>4,000 HOG</strong>.</p>
+    <p><em>Note:</em> HOG is a digital currency with no real-world value or conversion. For reference only:</p>
+    <div class="price-info">
+      1 HOG ≈ 0.000455 Euros (fictitious)<br />
+      4,000 HOG ≈ 1.82 Euros<br />
+      Equivalent to ≈ 0.11 USD<br />
+    </div>
+
+    <p>To confirm you are human and avoid bots, please type the word <strong>SPACE</strong> below:</p>
+
+    <input type="text" id="captchaInput" placeholder="Type SPACE here" autocomplete="off" />
+    <button id="confirmBtn">Confirm & Access</button>
+
+    <div id="accessLink"></div>
+    <div id="errorMsg" class="error"></div>
+  </section>
+
+</div>
+
+<script>
+  // Utils
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  // Elements
+  const generatorSection = document.getElementById('generatorSection');
+  const accessSection = document.getElementById('accessSection');
+
+  const urlInput = document.getElementById('urlInput');
+  const generateBtn = document.getElementById('generateBtn');
+  const qrcodeContainer = document.getElementById('qrcode');
+  const savedLinksContainer = document.getElementById('savedLinks');
+
+  const captchaInput = document.getElementById('captchaInput');
+  const confirmBtn = document.getElementById('confirmBtn');
+  const accessLinkDiv = document.getElementById('accessLink');
+  const errorMsg = document.getElementById('errorMsg');
+
+  // Load saved links from localStorage or empty object
+  function loadLinks() {
+    savedLinksContainer.innerHTML = '';
+    const saved = JSON.parse(localStorage.getItem('qrLinks') || '{}');
+    if (Object.keys(saved).length === 0) {
+      savedLinksContainer.innerHTML = '<p>No saved links yet.</p>';
+      return;
+    }
+    for (const [code, url] of Object.entries(saved)) {
+      const div = document.createElement('div');
+      div.classList.add('link-item');
+      div.innerHTML = `
+        <strong>${code}</strong>: <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a><br />
+        Short Link: <a href="?scode=${code}">go.html?scode=${code}</a>
+      `;
+      savedLinksContainer.appendChild(div);
+    }
+  }
+
+  function saveLink(shortCode, originalURL) {
+    const saved = JSON.parse(localStorage.getItem('qrLinks') || '{}');
+    saved[shortCode] = originalURL;
+    localStorage.setItem('qrLinks', JSON.stringify(saved));
+  }
+
+  function generateShortCode() {
+    return Math.random().toString(36).substring(2, 8);
+  }
+
+  function generateQRCode(text) {
+    qrcodeContainer.innerHTML = '';
+    QRCode.toCanvas(qrcodeContainer, text, { width: 200 }, function(error) {
+      if (error) console.error(error);
+    });
+  }
+
+  // Show generator UI
+  function showGenerator() {
+    accessSection.style.display = 'none';
+    generatorSection.style.display = 'block';
+    loadLinks();
+  }
+
+  // Show access UI
+  function showAccess(code) {
+    generatorSection.style.display = 'none';
+    accessSection.style.display = 'block';
+    errorMsg.textContent = '';
+    accessLinkDiv.innerHTML = '';
+    captchaInput.value = '';
+    confirmBtn.disabled = false;
+    captchaInput.disabled = false;
+
+    if (!code) {
+      errorMsg.textContent = 'Error: No access code provided.';
+      confirmBtn.disabled = true;
+      return;
+    }
+
+    confirmBtn.onclick = () => {
+      errorMsg.textContent = '';
+      const answer = captchaInput.value.trim().toUpperCase();
+      if (answer !== 'SPACE') {
+        errorMsg.textContent = 'Incorrect input. Please type the word SPACE to continue.';
+        return;
+      }
+      const saved = JSON.parse(localStorage.getItem('qrLinks') || '{}');
+      const originalURL = saved[code];
+      if (!originalURL) {
+        errorMsg.textContent = 'Sorry, the requested link was not found or expired.';
+        return;
+      }
+      accessLinkDiv.innerHTML = `
+        <p>Access granted! Click the link below to continue:</p>
+        <a href="${originalURL}" target="_blank" rel="noopener noreferrer">${originalURL}</a>
+      `;
+      confirmBtn.disabled = true;
+      captchaInput.disabled = true;
+    };
+  }
+
+  // Entry point
+  const scode = getQueryParam('scode');
+  if (scode) {
+    showAccess(scode);
+  } else {
+    showGenerator();
+  }
+
+  // Generator button event
+  generateBtn.addEventListener('click', () => {
+    const url = urlInput.value.trim();
+    if (!url) {
+      alert('Please enter a valid URL!');
+      return;
+    }
+    const shortCode = generateShortCode();
+    saveLink(shortCode, url);
+    generateQRCode(url);
+    loadLinks();
+    urlInput.value = '';
+  });
+</script>
+
+</body>
+</html>
