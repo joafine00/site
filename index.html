@@ -3,21 +3,20 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GO - QR Code & Access</title>
+<title>GoToLinkUp (Beta Demo) - Link Shortener & QR Generator</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
   body {
-    font-family: 'Orbitron', sans-serif;
-    background: #0b0f1a;
-    color: #a0cfff;
     margin: 0;
     padding: 1rem;
-    min-height: 100vh;
+    font-family: 'Orbitron', monospace;
+    background-color: #0b0f1a;
+    color: #a0cfff;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    min-height: 100vh;
   }
 
   #container {
@@ -25,51 +24,74 @@
     width: 100%;
   }
 
-  h1, h2, h3 {
+  h1 {
     color: #61dafb;
     letter-spacing: 0.1em;
-  }
-
-  /* Common styles */
-  input, button {
-    padding: 0.5rem;
-    font-size: 1rem;
-    margin: 0.3rem 0;
-    width: 100%;
-    border-radius: 5px;
-    border: none;
-    font-family: 'Orbitron', monospace;
-  }
-  input {
-    background: #1c2233;
-    color: #d0e7ff;
+    margin-bottom: 1rem;
     text-align: center;
   }
+
+  label {
+    font-weight: 700;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    margin-top: 0.3rem;
+    border-radius: 5px;
+    border: none;
+    background: #1c2233;
+    color: #d0e7ff;
+    box-sizing: border-box;
+  }
+
   button {
-    background: #4caf50;
+    margin-top: 0.7rem;
+    width: 100%;
+    padding: 0.6rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 5px;
+    border: none;
+    background-color: #4caf50;
     color: white;
     cursor: pointer;
-    font-weight: 700;
-    transition: background 0.3s ease;
+    transition: background-color 0.3s ease;
   }
   button:hover:not(:disabled) {
-    background: #45a049;
+    background-color: #45a049;
   }
   button:disabled {
-    background: #2f6d2f;
+    background-color: #2f6d2f;
     cursor: not-allowed;
   }
 
   #qrcode {
-    margin: 1rem 0;
+    margin: 1rem auto;
     text-align: center;
   }
 
+  #shortLink, #waitMessage {
+    margin-top: 1rem;
+    background: #12172a;
+    padding: 0.7rem;
+    border-radius: 5px;
+    word-break: break-word;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  #savedLinks {
+    margin-top: 2rem;
+  }
   .link-item {
     background: #12172a;
     padding: 0.5rem;
     border-radius: 5px;
-    margin: 0.5rem 0;
+    margin: 0.3rem 0;
     font-size: 0.9rem;
   }
   a {
@@ -80,180 +102,111 @@
     text-decoration: underline;
   }
 
-  #accessSection p, #accessSection .price-info {
-    font-size: 1rem;
-    line-height: 1.4;
-    margin-bottom: 1rem;
-  }
-
-  .price-info {
-    font-weight: 600;
-    color: #8ad0ff;
-  }
-
-  #accessLink {
-    margin-top: 2rem;
-    font-size: 1.1rem;
+  /* Wait page style */
+  #waitPage {
+    text-align: center;
+    margin-top: 3rem;
+    font-size: 1.3rem;
+    font-weight: 700;
     color: #7efc82;
-    word-break: break-word;
   }
 
-  .error {
-    color: #ff6b6b;
-    margin-top: 1rem;
+  /* Hide sections by default */
+  section {
+    display: none;
+  }
+
+  /* Show active */
+  section.active {
+    display: block;
   }
 </style>
 </head>
 <body>
+  <div id="container">
 
-<div id="container">
+    <h1>GoToLinkUp (Beta Demo)</h1>
 
-  <!-- Generator Section -->
-  <section id="generatorSection" style="display:none;">
-    <h1>GO - QR Code Generator</h1>
-    <label for="urlInput">Enter URL to generate QR and short link:</label>
-    <input type="text" id="urlInput" placeholder="https://example.com" autocomplete="off" />
-    <button id="generateBtn">Generate QR & Short Link</button>
+    <!-- Generator & List -->
+    <section id="mainSection" class="active">
+      <label for="urlInput">Enter your URL to shorten and generate QR code:</label>
+      <input type="text" id="urlInput" placeholder="https://example.com" autocomplete="off" />
+      <button id="generateBtn">Generate Short Link & QR Code</button>
 
-    <div id="qrcode"></div>
+      <div id="qrcode"></div>
 
-    <h3>Saved Links (short codes stored in localStorage):</h3>
-    <div id="savedLinks"></div>
-  </section>
+      <div id="shortLink"></div>
 
-  <!-- Access Section -->
-  <section id="accessSection" style="display:none;">
-    <h1>SPACE COMMUNITY ACCESS</h1>
-    <p>Welcome! To access or download the requested content, you need <strong>4,000 HOG</strong>.</p>
-    <p><em>Note:</em> HOG is a digital currency with no real-world value or conversion. For reference only:</p>
-    <div class="price-info">
-      1 HOG ≈ 0.000455 Euros (fictitious)<br />
-      4,000 HOG ≈ 1.82 Euros<br />
-      Equivalent to ≈ 0.11 USD<br />
-    </div>
+      <h3>Saved Short Links:</h3>
+      <div id="savedLinks"></div>
+    </section>
 
-    <p>To confirm you are human and avoid bots, please type the word <strong>SPACE</strong> below:</p>
+    <!-- Wait / Redirect Section -->
+    <section id="waitSection">
+      <div id="waitPage">
+        <p>Please wait while we verify you are not a bot...</p>
+        <p id="countdown">Redirecting in 5 seconds</p>
+      </div>
+    </section>
 
-    <input type="text" id="captchaInput" placeholder="Type SPACE here" autocomplete="off" />
-    <button id="confirmBtn">Confirm & Access</button>
-
-    <div id="accessLink"></div>
-    <div id="errorMsg" class="error"></div>
-  </section>
-
-</div>
+  </div>
 
 <script>
-  // Utils
-  function getQueryParam(param) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
-  }
-
-  // Elements
-  const generatorSection = document.getElementById('generatorSection');
-  const accessSection = document.getElementById('accessSection');
+  const mainSection = document.getElementById('mainSection');
+  const waitSection = document.getElementById('waitSection');
 
   const urlInput = document.getElementById('urlInput');
   const generateBtn = document.getElementById('generateBtn');
   const qrcodeContainer = document.getElementById('qrcode');
+  const shortLinkDiv = document.getElementById('shortLink');
   const savedLinksContainer = document.getElementById('savedLinks');
+  const countdownEl = document.getElementById('countdown');
 
-  const captchaInput = document.getElementById('captchaInput');
-  const confirmBtn = document.getElementById('confirmBtn');
-  const accessLinkDiv = document.getElementById('accessLink');
-  const errorMsg = document.getElementById('errorMsg');
-
-  // Load saved links from localStorage or empty object
-  function loadLinks() {
-    savedLinksContainer.innerHTML = '';
-    const saved = JSON.parse(localStorage.getItem('qrLinks') || '{}');
-    if (Object.keys(saved).length === 0) {
-      savedLinksContainer.innerHTML = '<p>No saved links yet.</p>';
-      return;
-    }
-    for (const [code, url] of Object.entries(saved)) {
-      const div = document.createElement('div');
-      div.classList.add('link-item');
-      div.innerHTML = `
-        <strong>${code}</strong>: <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a><br />
-        Short Link: <a href="?scode=${code}">go.html?scode=${code}</a>
-      `;
-      savedLinksContainer.appendChild(div);
-    }
-  }
-
-  function saveLink(shortCode, originalURL) {
-    const saved = JSON.parse(localStorage.getItem('qrLinks') || '{}');
-    saved[shortCode] = originalURL;
-    localStorage.setItem('qrLinks', JSON.stringify(saved));
+  // Utils
+  function getQueryParam(param) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(param);
   }
 
   function generateShortCode() {
     return Math.random().toString(36).substring(2, 8);
   }
 
+  // Save links to localStorage
+  function saveLink(shortCode, originalURL) {
+    let links = JSON.parse(localStorage.getItem('gotolinkup_links') || '{}');
+    links[shortCode] = originalURL;
+    localStorage.setItem('gotolinkup_links', JSON.stringify(links));
+  }
+
+  // Load links from localStorage and list them
+  function loadLinks() {
+    savedLinksContainer.innerHTML = '';
+    const links = JSON.parse(localStorage.getItem('gotolinkup_links') || '{}');
+    if (Object.keys(links).length === 0) {
+      savedLinksContainer.innerHTML = '<p>No saved short links yet.</p>';
+      return;
+    }
+    for (const [code, url] of Object.entries(links)) {
+      const div = document.createElement('div');
+      div.className = 'link-item';
+      div.innerHTML = `
+        <strong>${code}</strong>: <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a><br>
+        Short Link: <a href="?scode=${code}">${window.location.origin + window.location.pathname}?scode=${code}</a>
+      `;
+      savedLinksContainer.appendChild(div);
+    }
+  }
+
+  // Generate QR code for the original URL (not the short link)
   function generateQRCode(text) {
     qrcodeContainer.innerHTML = '';
-    QRCode.toCanvas(qrcodeContainer, text, { width: 200 }, function(error) {
+    QRCode.toCanvas(qrcodeContainer, text, { width: 200 }, function (error) {
       if (error) console.error(error);
     });
   }
 
-  // Show generator UI
-  function showGenerator() {
-    accessSection.style.display = 'none';
-    generatorSection.style.display = 'block';
-    loadLinks();
-  }
-
-  // Show access UI
-  function showAccess(code) {
-    generatorSection.style.display = 'none';
-    accessSection.style.display = 'block';
-    errorMsg.textContent = '';
-    accessLinkDiv.innerHTML = '';
-    captchaInput.value = '';
-    confirmBtn.disabled = false;
-    captchaInput.disabled = false;
-
-    if (!code) {
-      errorMsg.textContent = 'Error: No access code provided.';
-      confirmBtn.disabled = true;
-      return;
-    }
-
-    confirmBtn.onclick = () => {
-      errorMsg.textContent = '';
-      const answer = captchaInput.value.trim().toUpperCase();
-      if (answer !== 'SPACE') {
-        errorMsg.textContent = 'Incorrect input. Please type the word SPACE to continue.';
-        return;
-      }
-      const saved = JSON.parse(localStorage.getItem('qrLinks') || '{}');
-      const originalURL = saved[code];
-      if (!originalURL) {
-        errorMsg.textContent = 'Sorry, the requested link was not found or expired.';
-        return;
-      }
-      accessLinkDiv.innerHTML = `
-        <p>Access granted! Click the link below to continue:</p>
-        <a href="${originalURL}" target="_blank" rel="noopener noreferrer">${originalURL}</a>
-      `;
-      confirmBtn.disabled = true;
-      captchaInput.disabled = true;
-    };
-  }
-
-  // Entry point
-  const scode = getQueryParam('scode');
-  if (scode) {
-    showAccess(scode);
-  } else {
-    showGenerator();
-  }
-
-  // Generator button event
+  // Main generator flow
   generateBtn.addEventListener('click', () => {
     const url = urlInput.value.trim();
     if (!url) {
@@ -263,9 +216,53 @@
     const shortCode = generateShortCode();
     saveLink(shortCode, url);
     generateQRCode(url);
+    shortLinkDiv.innerHTML = `
+      Short link: <a href="?scode=${shortCode}">${window.location.origin + window.location.pathname}?scode=${shortCode}</a>
+      <br><small>Note: QR code is for the original URL only.</small>
+    `;
     loadLinks();
     urlInput.value = '';
   });
+
+  // Wait page + redirect logic
+  function waitAndRedirect(shortCode) {
+    mainSection.classList.remove('active');
+    waitSection.classList.add('active');
+
+    const links = JSON.parse(localStorage.getItem('gotolinkup_links') || '{}');
+    const originalURL = links[shortCode];
+
+    if (!originalURL) {
+      waitSection.innerHTML = '<p style="color:#ff6b6b; font-weight:700; text-align:center;">Invalid or expired link code.</p>';
+      return;
+    }
+
+    let secondsLeft = 5;
+    countdownEl.textContent = `Redirecting in ${secondsLeft} seconds`;
+
+    const interval = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft > 0) {
+        countdownEl.textContent = `Redirecting in ${secondsLeft} seconds`;
+      } else {
+        clearInterval(interval);
+        // Redirect to original URL
+        window.location.href = originalURL;
+      }
+    }, 1000);
+  }
+
+  // On page load
+  const scode = getQueryParam('scode');
+  if (scode) {
+    // Show wait page with redirect
+    waitAndRedirect(scode);
+  } else {
+    // Show main UI
+    mainSection.classList.add('active');
+    waitSection.classList.remove('active');
+    loadLinks();
+  }
 </script>
 
 </body>
